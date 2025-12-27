@@ -68,6 +68,10 @@ image die = im.Scale(
 )
 
 
+label start:
+    jump chapter_1
+
+
 ## 第一章 ####################################################################
 label chapter_1:
 
@@ -431,6 +435,7 @@ label story4:
     show screen screen_text("玩家可以游玩第二关", duration=2.5)
     pause 2.5
 
+    $ persistent.chapter1_completed = True
     return
 
 label story5:
@@ -488,6 +493,7 @@ label story5:
     pause 2.5
     show screen screen_text("第二章已解锁", duration=2.5)
     pause 2.5
+    $ persistent.chapter1_completed = True
 
     return
 
@@ -500,6 +506,7 @@ label chapter_2:
 
     Mi "欢迎来到第二章"
 
+    $ persistent.chapter2_completed = True
     return
 
 
@@ -510,6 +517,7 @@ label chapter_3:
 
     Mi "欢迎来到第三章"
 
+    $ persistent.chapter3_completed = True
     return
 
 
@@ -520,6 +528,7 @@ label chapter_4:
 
     Mi "欢迎来到第四章"
 
+    $ persistent.chapter4_completed = True
     return
 
 
@@ -530,4 +539,5 @@ label chapter_5:
 
     Mi "欢迎来到第五章"
 
+    $ persistent.chapter5_completed = True
     return

@@ -1,4 +1,46 @@
-﻿################################################################################
+﻿init -1 python:
+    def load_most_recent_game():
+        slot = renpy.newest_slot()
+        if slot is not None:
+            try:
+                renpy.load(slot)
+            except:
+                # If loading fails, it's likely due to an incompatible script change.
+                # Show an error screen.
+                renpy.call_in_new_context("show_load_error_screen")
+
+screen show_load_error_screen():
+    tag menu
+    modal True
+    zorder 200
+
+    style_prefix "confirm"
+
+    add "gui/overlay/confirm.png"
+
+    frame:
+        vbox:
+            xalign .5
+            yalign .5
+            spacing 45
+
+            label _("加载存档失败"):
+                style "confirm_prompt"
+                xalign 0.5
+
+            text _("存档文件可能已损坏或与当前游戏版本不兼容。"):
+                style "prompt_text"
+                xalign 0.5
+
+            null height 20
+
+            textbutton _("返回主菜单") action MainMenu()
+
+label show_load_error_screen:
+    show screen show_load_error_screen
+    return
+
+################################################################################
 ## 初始化
 ################################################################################
 
@@ -302,6 +344,35 @@ style quick_button_text:
 ##
 ## 该屏幕包含在标题菜单和游戏菜单中，并提供导航到其他菜单，以及启动游戏。
 
+screen start_game_menu():
+    tag menu
+
+    on "show" action Play("music", "audio/main_menu.mp3", loop=True, fadein=2.0)
+
+    add Movie(
+    play="videos/menu.webm",  
+    size=(3840, 2160)
+    )
+
+    frame:
+        style "main_menu_frame"
+
+    vbox:
+        style_prefix "navigation"
+        xpos gui.navigation_xpos
+        yalign 0.3
+        spacing gui.navigation_spacing
+
+        textbutton _("从头开始") action Start("chapter_1")
+        if renpy.list_saved_games(fast=True):
+            textbutton _("最近的存档") action Function(load_most_recent_game)
+        textbutton _("章节选择") action ShowMenu("chapter_select")
+
+    textbutton _("返回"):
+        style "return_button"
+        action ShowMenu("main_menu")
+
+
 screen navigation():
 
     vbox:
@@ -314,7 +385,7 @@ screen navigation():
 
         if main_menu:
 
-            textbutton _("开始游戏") action Start("chapter_1")
+            textbutton _("开始游戏") action ShowMenu("start_game_menu")
         else:
 
             textbutton _("历史") action ShowMenu("history")
@@ -322,8 +393,6 @@ screen navigation():
             textbutton _("保存") action ShowMenu("save")
 
         textbutton _("读取游戏") action ShowMenu("load")
-
-        textbutton _("章节选择") action ShowMenu("chapter_select")
 
         textbutton _("人物总览") action ShowMenu("character_archive")
 
@@ -501,20 +570,25 @@ screen chapter_select():
                     {"id": "chapter_5", "name": "第五章", "desc": "最终章节"}
                 ]
             
-            for chapter in chapters:
+            for i, chapter in enumerate(chapters):
+                # Chapter 1 is always unlocked. Others depend on the previous one being completed.
+                $ unlocked = (i == 0) or getattr(persistent, f"chapter{i}_completed", False)
+
                 vbox:
                     spacing 8
                     
                     # 章节标题和描述
                     label "[chapter['name']]"
-                    text "[chapter['desc']]"
+
+                    if unlocked:
+                        text "[chapter['desc']]"
+                    else:
+                        text "完成上一章节后解锁"
                     
                     # 开始按钮
                     textbutton "开始章节":
-                        action [
-                            Function(init_new_game),
-                            Start(chapter["id"])
-                        ]
+                        action Start(chapter["id"])
+                        sensitive unlocked
 
 ## 人物总览 ########################################################################
 

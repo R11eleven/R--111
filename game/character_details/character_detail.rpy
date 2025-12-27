@@ -9,6 +9,7 @@ init python:
                 "basic": {
                     "title": "基本介绍",
                     "content_type": "grid",
+                    "required_understanding": 1,
                     "content": [
                         ("姓名", "Mithar"),
                         ("年龄", "17（剧情中大部分时候是的^^）"),
@@ -21,6 +22,7 @@ init python:
                 "personality": {
                     "title": "性格简介",
                     "content_type": "text",
+                    "required_understanding": 20,
                     "content": """Mithar的性格底色里有一种近乎天真的温和，这种温和不是软弱，更像是一种历经变故后选择与世界和解的坦然。他给人的第一印象总是很好相处，说话时带着点懒洋洋的笑意，好像没什么能真正让他着急上火。但这其实是一种巧妙的伪装，或者说，是一种节能模式。他骨子里享受独处远胜于热闹，那些看似开朗健谈的时刻，更多是出于习惯性的礼貌和体贴，好让场面不那么尴尬。
 
 他本质上是个感情浓度很高的人，对情绪的感知异常敏锐，总能察觉到身边人细微的变化。这让他显得很善解人意，但同时也是一种负担，因为他往往会不自觉地背负起他人的情绪。他欣赏感性远胜于纯粹的理性，认为后者在某些时刻显得过于冰冷和残忍，尽管他自己在必要时也能展现出近乎冷酷的理智。
@@ -32,17 +34,20 @@ init python:
                 "appearance": {
                     "title": "外貌设定",
                     "content_type": "text",
+                    "required_understanding": 40,
                     "content": "无论是什么时期的Mithar都很喜欢无印风的穿搭，实话实说他衣品不错，他喜欢穿毛衣或者白色衬衫。现世的他会把章鱼触手给露出来，并且打了耳钉，潮男这一块。三七分的头发和小辫子是锚点的一部分，头发是红白渐变，现世Mithar还有一副红色的墨镜，他偶尔会带，他确实很喜欢这副墨镜"
                 },
                 "tips": {
                     "title": "小Tips",
                     "content_type": "text",
+                    "required_understanding": 60,
                     "content": """1. Mithar会做饭，无论哪个时期。其实是因为Crate不会做饭；
 2. Mithar是个非常细致的人，他总能明锐地捕捉别人的爱好或者情绪通过一些微小的细节；"""
                 },
                 "fight": {
                     "title": "战斗设定",
                     "content_type": "text",
+                    "required_understanding": 80,
                     "content": """说真的Mithar不算弱，但他不怎么表现自己的实力。一是自己不喜欢打架，二是他很懒
 —————————————————————————————————————
 熵能——5000
@@ -55,6 +60,25 @@ Mithar没有武器，他只调用熵能。一是因为他不太需要，二是�
             }
         }
     }
+
+
+screen locked_content_notify():
+    modal True
+    zorder 200
+    style_prefix "confirm"
+    add "gui/overlay/confirm.png"
+    frame:
+        vbox:
+            xalign .5
+            yalign .5
+            spacing 90
+            label _("了解度不足，无法查看此内容"):
+                style "confirm_prompt"
+                xalign 0.5
+            hbox:
+                xalign 0.5
+                spacing 300
+                textbutton _("确定") action Hide("locked_content_notify")
 
 
 screen character_detail(character):
@@ -85,16 +109,28 @@ screen character_detail(character):
                 vbox:
                     style_prefix "navigation"
                     xpos gui.navigation_xpos
-                    yalign 0.4
+                    yalign 0.2
                     spacing gui.navigation_spacing
 
                     if char_data:
                         # 根据角色数据为每个标签页创建一个按钮
                         $ tab_keys = ["basic", "personality", "appearance", "tips", "fight"]
+                        $ current_understanding = understanding_dict.get(character, 0)
                         for tab_key in tab_keys:
                             if tab_key in char_data["tabs"]:
                                 $ tab_info = char_data["tabs"][tab_key]
-                                textbutton tab_info["title"] action SetScreenVariable("current_tab", tab_key)
+                                $ required = tab_info.get("required_understanding", 0)
+                                $ unlocked = current_understanding >= required
+
+                                $ button_title = tab_info["title"]
+                                $ button_action = SetScreenVariable("current_tab", tab_key) if unlocked else Show("locked_content_notify")
+                                $ button_color = gui.idle_color if unlocked else gui.insensitive_color
+
+                                # Create the button. If the current tab is locked, default to basic.
+                                if not unlocked and current_tab == tab_key:
+                                    $ current_tab = "basic"
+
+                                textbutton button_title action button_action text_color button_color
 
             # 右侧内容区域
             frame:
